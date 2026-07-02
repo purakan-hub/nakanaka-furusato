@@ -61,6 +61,11 @@
     padding:16px 18px; display:flex; align-items:center; gap:14px;
     cursor:pointer; user-select:none;
   }
+  .rc-checkbox-card.attention{
+    border-color:var(--ng-red);
+    box-shadow:0 0 0 3px rgba(217,48,37,.25);
+    animation:shake .4s;
+  }
   .rc-box{
     width:30px; height:30px; border:2px solid #c1c1c1; border-radius:3px; background:#fff;
     flex:0 0 auto; display:flex; align-items:center; justify-content:center;
@@ -215,6 +220,7 @@
       </div>
       <div class="grid" id="grid"></div>
       <div class="result-line" id="resultLine"></div>
+      <div class="result-line ng" id="rcWarn" style="display:none;">⚠ 下のチェックボックスにチェックを入れると次に進めます</div>
       <div class="result-note" id="resultNote">
         各画像の下に自治体名を表示しています。<i style="background:var(--ok-green)"></i>正解
         <i style="background:var(--miss-orange)"></i>選び漏れ
@@ -273,6 +279,7 @@ const REGIONS = {
 const shuffle = a => {const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 
 let current=null, selected=new Set(), revealed=false, rcLocked=false, tryCount=0;
+let rcChecked=false, pendingClear=false;
 
 function goPage2(){
   document.getElementById('page1').classList.remove('active');
@@ -280,16 +287,31 @@ function goPage2(){
   startRound();
 }
 
-/* ---- ロボット認証チェック（画像認証下の演出） ---- */
+/* ---- ロボット認証チェック（クリア必須条件） ---- */
 function onCheckboxClick(){
   if(rcLocked) return; rcLocked=true;
+  const card=document.getElementById('rcCard');
+  card.classList.remove('attention');
   const box=document.getElementById('rcBox');
   box.classList.add('checking');
   setTimeout(()=>{
     box.classList.remove('checking');
     box.classList.add('checked');
     box.innerHTML='✓';
+    rcChecked=true;
+    document.getElementById('rcWarn').style.display='none';
+    if(pendingClear){ setTimeout(showClear,500); }
   },1100);
+}
+
+/* チェック未了のままクリアした時の誘導 */
+function requireCheckbox(){
+  const card=document.getElementById('rcCard');
+  document.getElementById('rcWarn').style.display='block';
+  card.classList.remove('attention');
+  void card.offsetWidth; /* アニメ再生し直し */
+  card.classList.add('attention');
+  card.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 /* ---- 出題（ランダムに1地域） ---- */
@@ -308,6 +330,8 @@ function startRound(){
   selected=new Set(); revealed=false;
 
   document.getElementById('regionName').textContent=region;
+  pendingClear=false;
+  document.getElementById('rcWarn').style.display='none';
   const rl=document.getElementById('resultLine'); rl.className='result-line'; rl.textContent='';
   document.getElementById('resultNote').classList.remove('show');
   document.getElementById('infoPop').classList.remove('show');
@@ -337,7 +361,10 @@ function toggleInfo(){ document.getElementById('infoPop').classList.toggle('show
 function onConfirmClick(){
   const btn=document.getElementById('confirmBtn');
   if(revealed){
-    if(current.ok){ openRakuten(); }
+    if(current.ok){
+      if(rcChecked){ showClear(); }
+      else{ requireCheckbox(); }
+    }
     else{ startRound(); }
     return;
   }
@@ -370,7 +397,12 @@ function onConfirmClick(){
   document.getElementById('resultNote').classList.add('show');
   if(ok){
     btn.textContent='認証クリア ▶'; btn.classList.add('go');
-    setTimeout(showClear, 1800);
+    if(rcChecked){
+      setTimeout(showClear, 1800);
+    }else{
+      pendingClear=true;
+      setTimeout(requireCheckbox, 900);
+    }
   }else{
     btn.textContent='もう一度挑戦する';
   }
