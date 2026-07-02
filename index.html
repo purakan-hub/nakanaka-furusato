@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>なかなか開かない楽天ふるさと納税</title>
+<style>
+  :root{
+    --ink:#222; --sub:#5f6368; --line:#dcdfe3;
+    --blue:#1a73e8; --blue-dark:#1558b0;
+    --ok-green:#0a9b57; --ng-red:#d93025; --miss-orange:#e37400;
+    --rakuten:#bf0000;
+    --bg:#eef1f4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+    background:var(--bg); color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px 12px;
+  }
+  .app{width:100%; max-width:560px;}
+  .topline{font-size:13.5px; color:var(--sub); text-align:center; margin-bottom:10px;}
+
+  /* ===== 1ページ目：タイトル ===== */
+  .title-box{
+    background:#fff; border-radius:4px; border:1px solid var(--line);
+    box-shadow:0 1px 4px rgba(0,0,0,.15);
+    padding:44px 28px; text-align:center;
+  }
+  .title-box .r-logo{
+    display:inline-block; background:var(--rakuten); color:#fff;
+    font-weight:900; font-size:26px; width:52px; height:52px; line-height:52px;
+    border-radius:8px; margin-bottom:18px;
+  }
+  .title-box h1{
+    font-size:26px; line-height:1.5; margin:0 0 10px; letter-spacing:1px;
+  }
+  .title-box .subtitle{
+    font-size:15px; color:var(--sub); margin-bottom:26px; letter-spacing:2px;
+  }
+  .title-box .desc{
+    font-size:12.5px; color:var(--sub); line-height:1.8; margin-bottom:30px;
+  }
+  .btn-main{
+    background:var(--blue); color:#fff; border:none; border-radius:4px;
+    padding:14px 36px; font-size:17px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .btn-main:hover{background:var(--blue-dark);}
+  .btn-rakuten{
+    background:var(--rakuten); color:#fff; border:none; border-radius:4px;
+    padding:14px 36px; font-size:17px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .btn-rakuten:hover{background:#960000;}
+
+  /* ===== 2ページ目：ロボット認証 ===== */
+  .rc-checkbox-card{
+    background:#fff; border:1px solid var(--line); border-radius:4px;
+    box-shadow:0 1px 3px rgba(0,0,0,.15);
+    padding:16px 18px; display:flex; align-items:center; gap:14px;
+    cursor:pointer; user-select:none;
+  }
+  .rc-box{
+    width:30px; height:30px; border:2px solid #c1c1c1; border-radius:3px; background:#fff;
+    flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+  }
+  .rc-box.checking{border-color:var(--blue);}
+  .rc-box.checked{border-color:var(--ok-green); color:var(--ok-green); font-size:18px; font-weight:900;}
+  .rc-spinner{
+    width:18px; height:18px; border:3px solid #cfe0fb; border-top-color:var(--blue);
+    border-radius:50%; animation:spin .7s linear infinite; display:none;
+  }
+  .rc-box.checking .rc-spinner{display:block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .rc-label{font-size:17px; color:#3c4043; line-height:1.3; flex:1;}
+  .rc-brand{text-align:center; flex:0 0 auto;}
+  .rc-brand .rc-logo{font-size:34px; line-height:1;}
+  .rc-brand .rc-word{font-size:12px; color:#6b6b6b; font-weight:600; margin-top:2px;}
+  .rc-brand .rc-links{font-size:10px; color:#9aa0a6; margin-top:1px;}
+  .start-desc{font-size:12.5px; color:var(--sub); line-height:1.7; margin-top:12px; text-align:center;}
+
+  /* ===== 画像認証（青バナー＋3×3グリッド） ===== */
+  .challenge-box{
+    background:#fff; border-radius:4px; border:1px solid var(--line);
+    box-shadow:0 1px 4px rgba(0,0,0,.15); overflow:hidden;
+    margin-top:14px; display:none;
+  }
+  .challenge-banner{background:var(--blue); color:#fff; padding:16px 18px 14px;}
+  .challenge-banner .meta{
+    display:flex; justify-content:space-between; font-size:12.5px; opacity:.85; margin-bottom:8px;
+  }
+  .challenge-banner .headline{font-size:25px; font-weight:800; line-height:1.3;}
+  .challenge-banner .sub{font-size:14px; font-weight:400; opacity:.92; margin-top:4px;}
+
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line);}
+  .tile{
+    position:relative; aspect-ratio:1/1; background:#fbfbfc;
+    cursor:pointer; user-select:none; overflow:hidden;
+  }
+  .tile img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .15s;}
+  .tile .check{
+    position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%;
+    background:#fff; border:2px solid #bbb;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; color:transparent; z-index:2;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  .tile.selected{box-shadow:inset 0 0 0 3px var(--blue);}
+  .tile.selected img{transform:scale(.85);}
+  .tile.selected .check{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .tile .muni{
+    position:absolute; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,.72); color:#fff;
+    font-size:11px; font-weight:700; text-align:center;
+    padding:3px 2px; line-height:1.35; display:none; z-index:2;
+  }
+  .grid.revealed .tile{cursor:default;}
+  .grid.revealed .tile .muni{display:block;}
+  .tile.reveal-correct{box-shadow:inset 0 0 0 3px var(--ok-green);}
+  .tile.reveal-correct .check{background:var(--ok-green); border-color:var(--ok-green); color:#fff;}
+  .tile.reveal-miss{box-shadow:inset 0 0 0 3px var(--miss-orange);}
+  .tile.reveal-miss .check{background:var(--miss-orange); border-color:var(--miss-orange); color:#fff;}
+  .tile.reveal-wrong{box-shadow:inset 0 0 0 3px var(--ng-red);}
+  .tile.reveal-wrong .check{background:var(--ng-red); border-color:var(--ng-red); color:#fff;}
+  .tile.reveal-wrong img,.tile.reveal-miss img{opacity:.7;}
+  .tile.shake{animation:shake .4s;}
+  @keyframes shake{
+    20%,80%{transform:translateX(-3px);}
+    30%,50%,70%{transform:translateX(3px);}
+    40%,60%{transform:translateX(-2px);}
+  }
+
+  .result-line{padding:10px 18px 0; font-size:15px; font-weight:700; min-height:22px;}
+  .result-line.ok{color:var(--ok-green);}
+  .result-line.ng{color:var(--ng-red);}
+  .result-note{padding:4px 18px 0; font-size:11.5px; color:var(--sub); display:none;}
+  .result-note.show{display:block;}
+  .result-note i{width:10px; height:10px; border-radius:50%; display:inline-block; margin:0 3px 0 8px;}
+
+  .info-pop{
+    display:none; margin:10px 16px 0; border:1px solid var(--line); border-radius:4px;
+    background:#f8f9fa; padding:10px 12px; font-size:12px; color:var(--sub); line-height:1.7;
+  }
+  .info-pop.show{display:block;}
+  .info-pop b{color:var(--ink);}
+
+  .challenge-footer{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 16px 16px;
+  }
+  .icon-row{display:flex; gap:16px;}
+  .icon-btn{
+    width:40px; height:40px; border-radius:50%; border:none; background:transparent;
+    color:#5f6368; font-size:20px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{background:#f1f3f4;}
+  .btn-confirm{
+    background:var(--blue); color:#fff; border:none; border-radius:4px;
+    padding:12px 28px; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .btn-confirm:hover{background:var(--blue-dark);}
+  .btn-confirm.go{background:var(--rakuten);}
+  .btn-confirm.go:hover{background:#960000;}
+  .btn-confirm:disabled{background:#bcd0ef; cursor:not-allowed;}
+
+  /* ===== クリア画面 ===== */
+  .end-box{
+    background:#fff; border-radius:4px; border:1px solid var(--line);
+    box-shadow:0 1px 4px rgba(0,0,0,.15);
+    padding:30px 24px; text-align:center; display:none;
+  }
+  .end-box .stamp{
+    display:inline-block; border:3px solid var(--ok-green); color:var(--ok-green);
+    font-weight:900; font-size:13px; padding:5px 12px; border-radius:6px;
+    transform:rotate(-6deg); margin-bottom:10px; letter-spacing:2px;
+  }
+  .end-box h1{font-size:22px; margin:6px 0 4px;}
+  .end-box .score{font-size:15.5px; color:var(--sub); margin-bottom:16px; line-height:1.8;}
+  .end-box .count{font-size:12.5px; color:var(--sub); margin-top:12px;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== 1ページ目：タイトル ===== -->
+  <div class="page active" id="page1">
+    <div class="title-box">
+      <div class="r-logo">R</div>
+      <h1>なかなか開かない<br>楽天ふるさと納税</h1>
+      <div class="subtitle">〜あなたは楽天を見ることができるか〜</div>
+      <div class="desc">
+        楽天ふるさと納税のページに行くには、2つの認証を突破する必要があります。<br>
+        画像認証は「2026年7月1日 楽天ふるさと納税ランキングTOP100」の返礼品から出題。
+      </div>
+      <button class="btn-main" onclick="goPage2()">認証にすすむ ▶</button>
+    </div>
+  </div>
+
+  <!-- ===== 2ページ目：ロボット認証＋画像認証 ===== -->
+  <div class="page" id="page2">
+    <div class="topline">STEP 1：ロボット認証　→　STEP 2：画像認証</div>
+
+    <div class="rc-checkbox-card" id="rcCard" onclick="onCheckboxClick()">
+      <div class="rc-box" id="rcBox"><div class="rc-spinner"></div></div>
+      <div class="rc-label">私はロボットではありません</div>
+      <div class="rc-brand">
+        <div class="rc-logo">🔄🛡️</div>
+        <div class="rc-word">たぶんCAPTCHA</div>
+        <div class="rc-links">全100枚からランダム出題</div>
+      </div>
+    </div>
+    <div class="start-desc" id="startDesc">まずはチェックボックスをクリックしてください。</div>
+
+    <div class="challenge-box" id="challengeBox">
+      <div class="challenge-banner">
+        <div class="meta">
+          <span>STEP 2：画像認証</span>
+          <span>出題：2026年7月1日 楽天ランキング</span>
+        </div>
+        <div class="headline"><span id="regionName">九州</span> の自治体の返礼品</div>
+        <div class="sub">をすべて選択してください</div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="result-line" id="resultLine"></div>
+      <div class="result-note" id="resultNote">
+        各画像の下に自治体名を表示しています。<i style="background:var(--ok-green)"></i>正解
+        <i style="background:var(--miss-orange)"></i>選び漏れ
+        <i style="background:var(--ng-red)"></i>誤選択
+      </div>
+      <div class="info-pop" id="infoPop">
+        <b>出題元：</b>2026年7月1日時点 楽天ふるさと納税 総合ランキングTOP100の返礼品画像<br>
+        <b>地域区分：</b>九州＝福岡・佐賀・長崎・熊本・大分・宮崎・鹿児島 ／ 関西＝大阪・京都・兵庫・滋賀・奈良・和歌山 ／ 関東＝茨城・栃木・群馬・埼玉・千葉・東京・神奈川 ／ 北海道<br>
+        正解は3〜6枚。全問正解で楽天ふるさと納税が開きます。
+      </div>
+      <div class="challenge-footer">
+        <div class="icon-row">
+          <button class="icon-btn" title="別の問題に変える" onclick="skipRound()">🔄</button>
+          <button class="icon-btn" title="出題について" onclick="toggleInfo()">ⓘ</button>
+        </div>
+        <button class="btn-confirm" id="confirmBtn" onclick="onConfirmClick()">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== クリア画面 ===== -->
+  <div class="page" id="page3">
+    <div class="end-box" id="endBox" style="display:block;">
+      <div class="stamp">認証完了 VERIFIED</div>
+      <h1>認証成功！</h1>
+      <div class="score" id="endScore"></div>
+      <button class="btn-rakuten" onclick="openRakuten()">楽天ふるさと納税を開く ▶</button>
+      <div class="count" id="autoMsg"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const RAKUTEN_URL = "https://event.rakuten.co.jp/furusato/";
+const ITEMS = [{"m": "和歌山県紀の川市", "p": "和歌山県", "u": "https://tshop.r10s.jp/f302082-kinokawa/cabinet/08827272/08827743/kkinommsku_09.jpg"}, {"m": "千葉県銚子市", "p": "千葉県", "u": "https://tshop.r10s.jp/f122025-choshi/cabinet/09830770/imgrc0097531977.jpg"}, {"m": "北海道別海町", "p": "北海道", "u": "https://tshop.r10s.jp/f016918-betsukai/cabinet/07065206/maruhiro/imgrc0110186192.jpg"}, {"m": "宮崎県宮崎市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452017-miyazaki/cabinet/img/09794991/m040-gentei/m040-011-s-du2606.jpg"}, {"m": "熊本県高森町", "p": "熊本県", "u": "https://tshop.r10s.jp/f434281-takamori/cabinet/08290156/078-4361x1_00r04.jpg"}, {"m": "茨城県下妻市", "p": "茨城県", "u": "https://tshop.r10s.jp/f082104-shimotsuma/cabinet/12336391/koshi_5kg-10kg_01_01.jpg"}, {"m": "山梨県富士吉田市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192023-fujiyoshida/cabinet/08974571/08974588/imgrc0110929605.jpg"}, {"m": "熊本県御船町", "p": "熊本県", "u": "https://tshop.r10s.jp/f434418-mifune/cabinet/rice/07733058/skumhinmsn520k_06n.jpg"}, {"m": "宮崎県都城市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452025-miyakonojo/cabinet/08218569/miyachiku/sku-n203_ssn_0305.jpg"}, {"m": "佐賀県上峰町", "p": "佐賀県", "u": "https://tshop.r10s.jp/f413453-kamimine/cabinet/shohin/kome01/11911957/b-1115-as-sku-c.jpg"}, {"m": "北海道白糠町", "p": "北海道", "u": "https://tshop.r10s.jp/f016683-shiranuka/cabinet/09820890/13325189/wakeari_tougou.jpg"}, {"m": "北海道白糠町", "p": "北海道", "u": "https://tshop.r10s.jp/f016683-shiranuka/cabinet/09749626/30009172_ryu.jpg"}, {"m": "千葉県銚子市", "p": "千葉県", "u": "https://tshop.r10s.jp/f122025-choshi/cabinet/10088589/12868448/furusato_irai_001.jpg"}, {"m": "岩手県花巻市", "p": "岩手県", "u": "https://tshop.r10s.jp/f032051-hanamaki/cabinet/08346555/r8-4/2429-gyutan-top.jpg"}, {"m": "茨城県境町", "p": "茨城県", "u": "https://tshop.r10s.jp/f085464-sakai/cabinet/imgrc0099736996.jpg"}, {"m": "静岡県沼津市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222038-numazu/cabinet/imgrc0167751077.jpg"}, {"m": "福岡県飯塚市", "p": "福岡県", "u": "https://tshop.r10s.jp/f402052-iizuka/cabinet/yoshiura/a-848_skuss.jpg"}, {"m": "栃木県小山市", "p": "栃木県", "u": "https://tshop.r10s.jp/f092088-oyama/cabinet/1256759lp_01_r_re3.jpg"}, {"m": "福岡県大木町", "p": "福岡県", "u": "https://tshop.r10s.jp/f405221-oki/cabinet/11990460/11990475/13101819/cy001sku_spee.jpg"}, {"m": "茨城県つくばみらい市", "p": "茨城県", "u": "https://tshop.r10s.jp/f082350-tsukubamirai/cabinet/08025774/08741158/001/cl14-nt-1r-11.jpg"}, {"m": "静岡県焼津市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222127-yaizu/cabinet/08848430/y253-a12-150-s-r-d.jpg"}, {"m": "福井県敦賀市", "p": "福井県", "u": "https://tshop.r10s.jp/f182028-tsuruga/cabinet/img/024/024-a040_sku_saitan.jpg"}, {"m": "宮崎県新富町", "p": "宮崎県", "u": "https://tshop.r10s.jp/f454028-shintomi/cabinet/item_images/13444854/c_c388-2607_0_r.jpg"}, {"m": "埼玉県草加市", "p": "埼玉県", "u": "https://tshop.r10s.jp/f112216-soka/cabinet/image/crecia/r_l0310003/r_0310023_00.jpg"}, {"m": "宮城県気仙沼市", "p": "宮城県", "u": "https://tshop.r10s.jp/f042056-kesennuma/cabinet/2026/20564665re.jpg"}, {"m": "北海道千歳市", "p": "北海道", "u": "https://tshop.r10s.jp/f012246-chitose/cabinet/ci/ci347sku_0.jpg"}, {"m": "鹿児島県鹿屋市", "p": "鹿児島県", "u": "https://tshop.r10s.jp/f462039-kanoya/cabinet/sp/kn007/kn007-002_sku_s00_v4.jpg"}, {"m": "山梨県富士吉田市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192023-fujiyoshida/cabinet/08974571/08974588/f180-018-t511-rk-s-b.jpg"}, {"m": "北海道旭川市", "p": "北海道", "u": "https://tshop.r10s.jp/f012041-asahikawashi/cabinet/frp_goods/frp011/100270511.jpg"}, {"m": "岐阜県可児市", "p": "岐阜県", "u": "https://tshop.r10s.jp/f212148-kani/cabinet/10297047/0095-005-sku_rs.jpg"}, {"m": "佐賀県唐津市", "p": "佐賀県", "u": "https://tshop.r10s.jp/f412023-karatsu/cabinet/08243539/10370572/imgrc0125671975.jpg"}, {"m": "大阪府泉佐野市", "p": "大阪府", "u": "https://tshop.r10s.jp/f272132-izumisano/cabinet/f-item23/010b1754_1_0416.jpg"}, {"m": "石川県宝達志水町", "p": "石川県", "u": "https://tshop.r10s.jp/f173860-hodatsushimizu/cabinet/2026/38601351_sp.jpg"}, {"m": "高知県須崎市", "p": "高知県", "u": "https://tshop.r10s.jp/f392065-susaki/cabinet/07717224/10194113/image.jpg"}, {"m": "山梨県甲府市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192015-kofu/cabinet/09590698/k245-006-s-r.jpg"}, {"m": "山梨県韮崎市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192074-nirasaki/cabinet/2026/20745410_rakuten.jpg"}, {"m": "北海道千歳市", "p": "北海道", "u": "https://tshop.r10s.jp/f012246-chitose/cabinet/sku/bq329sku_0b.jpg"}, {"m": "山梨県富士吉田市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192023-fujiyoshida/cabinet/09024626/09024628/f181-087-177-s-r-f.jpg"}, {"m": "京都府亀岡市", "p": "京都府", "u": "https://tshop.r10s.jp/f262064-kameoka/cabinet/sanga/8530-30075785-01a.jpg"}, {"m": "新潟県長岡市", "p": "新潟県", "u": "https://tshop.r10s.jp/f152021-nagaoka/cabinet/item01/11895649/75-n101-1.jpg"}, {"m": "宮崎県宮崎市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452017-miyazaki/cabinet/img/m132/kikangentei/m132-014-us-nd26.jpg"}, {"m": "愛知県豊橋市", "p": "愛知県", "u": "https://tshop.r10s.jp/f232017-toyohashi/cabinet/10902252/natsume/r_t2397_1n.jpg"}, {"m": "北海道恵庭市", "p": "北海道", "u": "https://tshop.r10s.jp/f012319-eniwa/cabinet/imgrc0167741663.jpg"}, {"m": "沖縄県八重瀬町", "p": "沖縄県", "u": "https://tshop.r10s.jp/f473626-yaese/cabinet/12997311/imgrc0115771127.jpg"}, {"m": "長野県中野市", "p": "長野県", "u": "https://tshop.r10s.jp/f202118-nakano/cabinet/1422800mt_lp_01_re4.jpg"}, {"m": "静岡県富士宮市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222071-fujinomiya/cabinet/09455198/69d4ab21064f76591719.jpg"}, {"m": "宮崎県宮崎市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452017-miyazaki/cabinet/img/09794991/m040-gentei/m040-012-s-du26.jpg"}, {"m": "静岡県富士宮市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222071-fujinomiya/cabinet/09455198/69d49470e16648859573.jpg"}, {"m": "静岡県富士宮市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222071-fujinomiya/cabinet/05215706/imgrc0094931363.jpg"}, {"m": "北海道別海町", "p": "北海道", "u": "https://tshop.r10s.jp/f016918-betsukai/cabinet/07065206/maruhiro/imgrc0101348173.jpg"}, {"m": "静岡県焼津市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222127-yaizu/cabinet/y057/y057-a05-018-sku-b.jpg"}, {"m": "静岡県富士市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222101-fuji/cabinet/001/10536753/sf001-012-374-s-r-a.jpg"}, {"m": "宮崎県都城市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452025-miyakonojo/cabinet/08218569/08270821/mj-1109_ssn_0623.jpg"}, {"m": "宮崎県宮崎市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452017-miyazaki/cabinet/img/m132/kikangentei/m132-104-us-2w-ng26.jpg"}, {"m": "北海道札幌市", "p": "北海道", "u": "https://tshop.r10s.jp/f011002-sapporo/cabinet/item/207/imgrc0122335236.jpg"}, {"m": "栃木県下野市", "p": "栃木県", "u": "https://tshop.r10s.jp/f092169-shimotsuke/cabinet/10989501/11032767/ab001-sku.jpg"}, {"m": "岡山県矢掛町", "p": "岡山県", "u": "https://tshop.r10s.jp/f334618-yakage/cabinet/08867952/08867954/2ykgjmmsk001_21.jpg"}, {"m": "宮崎県都城市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452025-miyakonojo/cabinet/08218569/08257100/mj-3314_ssn_0623.jpg"}, {"m": "宮崎県都城市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452025-miyakonojo/cabinet/ambassador/mj-8404_ssn_0310.jpg"}, {"m": "秋田県大館市", "p": "秋田県", "u": "https://tshop.r10s.jp/f052043-odate/cabinet/051/051001_001.jpg"}, {"m": "静岡県吉田町", "p": "静岡県", "u": "https://tshop.r10s.jp/f224243-yoshida/cabinet/2026/22424647ranking.jpg"}, {"m": "大阪府泉佐野市", "p": "大阪府", "u": "https://tshop.r10s.jp/f272132-izumisano/cabinet/f-item24/g3617ar_01_0615.jpg"}, {"m": "静岡県焼津市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222127-yaizu/cabinet/08757828/y015-a10-1145-sku-a.jpg"}, {"m": "宮崎県都城市", "p": "宮崎県", "u": "https://tshop.r10s.jp/f452025-miyakonojo/cabinet/08218569/miyachiku/sku-n204_ssn_0926.jpg"}, {"m": "熊本県南阿蘇村", "p": "熊本県", "u": "https://tshop.r10s.jp/f434337-minamiaso/cabinet/08432319/kome/asobiyori/maasbiyr002_14c.jpg"}, {"m": "岐阜県可児市", "p": "岐阜県", "u": "https://tshop.r10s.jp/f212148-kani/cabinet/10297047/imgrc0116708918.jpg"}, {"m": "大阪府泉南市", "p": "大阪府", "u": "https://tshop.r10s.jp/f272281-sennan/cabinet/07911088/020d-005_sku-tgt.jpg"}, {"m": "千葉県長生村", "p": "千葉県", "u": "https://tshop.r10s.jp/f124231-chosei/cabinet/10067015/imgrc0105171587.jpg"}, {"m": "福島県桑折町", "p": "福島県", "u": "https://tshop.r10s.jp/f073016-koori/cabinet/item/13431217/13431219/07301-0096-0224_sku2.jpg"}, {"m": "北海道紋別市", "p": "北海道", "u": "https://tshop.r10s.jp/f012190-mombetsu/cabinet/13156334/20260221_01.jpg"}, {"m": "山形県朝日町", "p": "山形県", "u": "https://tshop.r10s.jp/f063231-asahi/cabinet/take-cherry/imgrc0127457509.jpg"}, {"m": "熊本県氷川町", "p": "熊本県", "u": "https://tshop.r10s.jp/f434680-hikawa/cabinet/niku/09306648/toriniku.jpg"}, {"m": "北海道千歳市", "p": "北海道", "u": "https://tshop.r10s.jp/f012246-chitose/cabinet/ci/ci342sku_0.jpg"}, {"m": "大阪府泉佐野市", "p": "大阪府", "u": "https://tshop.r10s.jp/f272132-izumisano/cabinet/f-item24/g3884r_1_0515.jpg"}, {"m": "北海道別海町", "p": "北海道", "u": "https://tshop.r10s.jp/f016918-betsukai/cabinet/07065206/09368209/gyutan/imgrc0118294650.jpg"}, {"m": "茨城県守谷市", "p": "茨城県", "u": "https://tshop.r10s.jp/f082244-moriya/cabinet/kyokuju/43654-40015075_00.jpg"}, {"m": "山形県天童市", "p": "山形県", "u": "https://tshop.r10s.jp/f062103-tendo/cabinet/banner/001/01-137-sku-oya.jpg"}, {"m": "鹿児島県大崎町", "p": "鹿児島県", "u": "https://tshop.r10s.jp/f464686-osaki/cabinet/08433205/a900_kai.jpg"}, {"m": "北海道名寄市", "p": "北海道", "u": "https://tshop.r10s.jp/f012211-nayoro/cabinet/10503513/10572612/imgrc0103623714.jpg"}, {"m": "山梨県甲府市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192015-kofu/cabinet/10150369/k194-011-017-s-r-a.jpg"}, {"m": "北海道別海町", "p": "北海道", "u": "https://tshop.r10s.jp/f016918-betsukai/cabinet/07065206/notukegyokyou/imgrc0109601252.jpg"}, {"m": "静岡県沼津市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222038-numazu/cabinet/08484108/11706091/imgrc0165409924.jpg"}, {"m": "岡山県矢掛町", "p": "岡山県", "u": "https://tshop.r10s.jp/f334618-yakage/cabinet/muscat/ywmuscat_sku15.jpg"}, {"m": "北海道登別市", "p": "北海道", "u": "https://tshop.r10s.jp/f012301-noboribetsu/cabinet/09849484/09862917/12155979/imgrc0139597385.jpg"}, {"m": "北海道白糠町", "p": "北海道", "u": "https://tshop.r10s.jp/f016683-shiranuka/cabinet/12156728/688c7d9ad74599443142.jpg"}, {"m": "熊本県八代市", "p": "熊本県", "u": "https://tshop.r10s.jp/f432024-yatsushiro/cabinet/09711498/09837479/r233-4066_sku_01a.jpg"}, {"m": "茨城県牛久市", "p": "茨城県", "u": "https://tshop.r10s.jp/f082198-ushiku/cabinet/arp22/da/001/da006us-1-6.jpg"}, {"m": "山形県鶴岡市", "p": "山形県", "u": "https://tshop.r10s.jp/f062031-tsuruoka/cabinet/kome_1/tuyahimesamune.jpg"}, {"m": "静岡県焼津市", "p": "静岡県", "u": "https://tshop.r10s.jp/f222127-yaizu/cabinet/08811920/y184-a15-706-sku-a.jpg"}, {"m": "宮城県気仙沼市", "p": "宮城県", "u": "https://tshop.r10s.jp/f042056-kesennuma/cabinet/2026/imgrc0116372907.jpg"}, {"m": "長野県松川町", "p": "長野県", "u": "https://tshop.r10s.jp/f204021-matsukawa/cabinet/12083400/1.jpg"}, {"m": "山形県西川町", "p": "山形県", "u": "https://tshop.r10s.jp/f063223-nishikawa/cabinet/fyn9-0800-0999/r_fyn9_996_b.jpg"}, {"m": "福岡県赤村", "p": "福岡県", "u": "https://tshop.r10s.jp/f406091-aka/cabinet/07597737/sakemi/fukuyume_top.jpg"}, {"m": "千葉県銚子市", "p": "千葉県", "u": "https://tshop.r10s.jp/f122025-choshi/cabinet/10088589/imgrc0104989674.jpg"}, {"m": "山梨県甲州市", "p": "山梨県", "u": "https://tshop.r10s.jp/f192139-koshu/cabinet/08241441/ks040-t157-223-s-r.jpg"}, {"m": "山形県村山市", "p": "山形県", "u": "https://tshop.r10s.jp/f062081-murayama/cabinet/kome/tf-haxxa10_00.jpg"}, {"m": "長野県松川町", "p": "長野県", "u": "https://tshop.r10s.jp/f204021-matsukawa/cabinet/12329378/tk15-2.jpg"}, {"m": "滋賀県竜王町", "p": "滋賀県", "u": "https://tshop.r10s.jp/f253847-ryuo/cabinet/10695566/imgrc0115552332.jpg"}, {"m": "宮崎県都農町", "p": "宮崎県", "u": "https://tshop.r10s.jp/f454061-tsuno/cabinet/10591356/t026-014-sku-u_2606.jpg"}, {"m": "大阪府泉佐野市", "p": "大阪府", "u": "https://tshop.r10s.jp/f272132-izumisano/cabinet/f-item24/kgpz007r_1_0513.jpg"}];
+
+const REGIONS = {
+  "九州":   ["福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県"],
+  "関西":   ["大阪府","京都府","兵庫県","滋賀県","奈良県","和歌山県"],
+  "北海道": ["北海道"],
+  "関東":   ["茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県"]
+};
+
+const shuffle = a => {const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+
+let current=null, selected=new Set(), revealed=false, rcLocked=false, tryCount=0;
+
+function goPage2(){
+  document.getElementById('page1').classList.remove('active');
+  document.getElementById('page2').classList.add('active');
+}
+
+/* ---- STEP1：ロボット認証 ---- */
+function onCheckboxClick(){
+  if(rcLocked) return; rcLocked=true;
+  const box=document.getElementById('rcBox');
+  box.classList.add('checking');
+  setTimeout(()=>{
+    box.classList.remove('checking');
+    box.classList.add('checked');
+    box.innerHTML='✓';
+    document.getElementById('startDesc').textContent='ロボット認証 OK。続けて画像認証へ！';
+    setTimeout(()=>{
+      document.getElementById('challengeBox').style.display='block';
+      startRound();
+      document.getElementById('challengeBox').scrollIntoView({behavior:'smooth'});
+    },500);
+  },1100);
+}
+
+/* ---- STEP2:出題（ランダムに1地域） ---- */
+function startRound(){
+  tryCount++;
+  const region = shuffle(Object.keys(REGIONS))[0];
+  const prefs = REGIONS[region];
+  const inR  = shuffle(ITEMS.filter(i=>prefs.includes(i.p)));
+  const outR = shuffle(ITEMS.filter(i=>!prefs.includes(i.p)));
+  const nCorrect = Math.min(3+Math.floor(Math.random()*4), inR.length); /* 3〜6 */
+  const tiles = shuffle([
+    ...inR.slice(0,nCorrect).map(i=>({...i,correct:true})),
+    ...outR.slice(0,9-nCorrect).map(i=>({...i,correct:false}))
+  ]);
+  current={region,tiles,nCorrect};
+  selected=new Set(); revealed=false;
+
+  document.getElementById('regionName').textContent=region;
+  const rl=document.getElementById('resultLine'); rl.className='result-line'; rl.textContent='';
+  document.getElementById('resultNote').classList.remove('show');
+  document.getElementById('infoPop').classList.remove('show');
+  const btn=document.getElementById('confirmBtn');
+  btn.textContent='確認'; btn.disabled=false; btn.classList.remove('go');
+
+  const grid=document.getElementById('grid');
+  grid.classList.remove('revealed');
+  grid.innerHTML='';
+  tiles.forEach((t,idx)=>{
+    const d=document.createElement('div');
+    d.className='tile';
+    d.innerHTML=`<img src="${t.u}" alt="返礼品"><span class="check">✓</span><span class="muni">${t.m}</span>`;
+    d.onclick=()=>{
+      if(revealed) return;
+      if(selected.has(idx)){selected.delete(idx); d.classList.remove('selected');}
+      else{selected.add(idx); d.classList.add('selected');}
+    };
+    grid.appendChild(d);
+  });
+}
+
+function skipRound(){ if(!revealed) startRound(); }
+function toggleInfo(){ document.getElementById('infoPop').classList.toggle('show'); }
+
+/* ---- 判定 ---- */
+function onConfirmClick(){
+  const btn=document.getElementById('confirmBtn');
+  if(revealed){
+    if(current.ok){ openRakuten(); }
+    else{ startRound(); }
+    return;
+  }
+  if(selected.size===0){
+    const grid=document.getElementById('grid');
+    grid.classList.add('shake');
+    setTimeout(()=>grid.classList.remove('shake'),450);
+    const rl=document.getElementById('resultLine');
+    rl.className='result-line ng'; rl.textContent='画像を選択してください';
+    return;
+  }
+  revealed=true;
+  const grid=document.getElementById('grid');
+  grid.classList.add('revealed');
+  let ok=true;
+  [...grid.children].forEach((d,idx)=>{
+    const t=current.tiles[idx], sel=selected.has(idx);
+    d.classList.remove('selected');
+    if(t.correct && sel){d.classList.add('reveal-correct');}
+    else if(t.correct && !sel){d.classList.add('reveal-miss'); d.querySelector('.check').textContent='！'; ok=false;}
+    else if(!t.correct && sel){d.classList.add('reveal-wrong'); d.querySelector('.check').textContent='✕'; ok=false;}
+    else{d.querySelector('.check').style.display='none';}
+  });
+  current.ok=ok;
+  const rl=document.getElementById('resultLine');
+  rl.className='result-line '+(ok?'ok':'ng');
+  rl.textContent=ok
+    ? `⭕ 正解！ ${current.region}の返礼品 ${current.nCorrect}枚をすべて選べました。`
+    : `❌ 不正解… 正解は ${current.nCorrect}枚でした。別の問題で再挑戦！`;
+  document.getElementById('resultNote').classList.add('show');
+  if(ok){
+    btn.textContent='認証クリア ▶'; btn.classList.add('go');
+    setTimeout(showClear, 1800);
+  }else{
+    btn.textContent='もう一度挑戦する';
+  }
+}
+
+/* ---- クリア画面 → 楽天へ ---- */
+let cleared=false;
+function showClear(){
+  if(cleared) return; cleared=true;
+  document.getElementById('page2').classList.remove('active');
+  document.getElementById('page3').classList.add('active');
+  document.getElementById('endScore').innerHTML=
+    `お題「<b>${current.region}</b> の自治体の返礼品」を突破（挑戦 ${tryCount} 回）<br>`
+    +`🎉 あなたは楽天を見ることができます！`;
+  let sec=3;
+  const msg=document.getElementById('autoMsg');
+  msg.textContent=`${sec}秒後に自動で開きます…`;
+  const timer=setInterval(()=>{
+    sec--;
+    if(sec<=0){clearInterval(timer); openRakuten();}
+    else msg.textContent=`${sec}秒後に自動で開きます…`;
+  },1000);
+}
+
+function openRakuten(){ location.href = RAKUTEN_URL; }
+</script>
+</body>
+</html>
