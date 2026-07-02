@@ -84,7 +84,7 @@
   .challenge-box{
     background:#fff; border-radius:4px; border:1px solid var(--line);
     box-shadow:0 1px 4px rgba(0,0,0,.15); overflow:hidden;
-    margin-top:14px; display:none;
+    margin-bottom:14px;
   }
   .challenge-banner{background:var(--blue); color:#fff; padding:16px 18px 14px;}
   .challenge-banner .meta{
@@ -191,34 +191,23 @@
     <div class="title-box">
       <div class="r-logo">R</div>
       <h1>なかなか開かない<br>楽天ふるさと納税</h1>
-      <div class="subtitle">〜あなたは楽天を見ることができるか〜</div>
+      <div class="subtitle">あなたは楽天ふるさと納税を見ることができるか？</div>
       <div class="desc">
-        楽天ふるさと納税のページに行くには、2つの認証を突破する必要があります。<br>
+        楽天ふるさと納税のページに行くには、1つの認証を突破する必要があります。<br>
         画像認証は「2026年7月1日 楽天ふるさと納税ランキングTOP100」の返礼品から出題。
       </div>
       <button class="btn-main" onclick="goPage2()">認証にすすむ ▶</button>
     </div>
   </div>
 
-  <!-- ===== 2ページ目：ロボット認証＋画像認証 ===== -->
+  <!-- ===== 2ページ目：画像認証（ロボット認証を統合） ===== -->
   <div class="page" id="page2">
-    <div class="topline">STEP 1：ロボット認証　→　STEP 2：画像認証</div>
-
-    <div class="rc-checkbox-card" id="rcCard" onclick="onCheckboxClick()">
-      <div class="rc-box" id="rcBox"><div class="rc-spinner"></div></div>
-      <div class="rc-label">私はロボットではありません</div>
-      <div class="rc-brand">
-        <div class="rc-logo">🔄🛡️</div>
-        <div class="rc-word">たぶんCAPTCHA</div>
-        <div class="rc-links">全100枚からランダム出題</div>
-      </div>
-    </div>
-    <div class="start-desc" id="startDesc">まずはチェックボックスをクリックしてください。</div>
+    <div class="topline">画像認証</div>
 
     <div class="challenge-box" id="challengeBox">
       <div class="challenge-banner">
         <div class="meta">
-          <span>STEP 2：画像認証</span>
+          <span>画像認証 — 1問勝負</span>
           <span>出題：2026年7月1日 楽天ランキング</span>
         </div>
         <div class="headline"><span id="regionName">九州</span> の自治体の返礼品</div>
@@ -242,6 +231,17 @@
           <button class="icon-btn" title="出題について" onclick="toggleInfo()">ⓘ</button>
         </div>
         <button class="btn-confirm" id="confirmBtn" onclick="onConfirmClick()">確認</button>
+      </div>
+    </div>
+
+    <!-- ロボット認証チェック（画像認証の下に統合） -->
+    <div class="rc-checkbox-card" id="rcCard" onclick="onCheckboxClick()">
+      <div class="rc-box" id="rcBox"><div class="rc-spinner"></div></div>
+      <div class="rc-label">私はロボットまたは民間企業の機密事項を公開させる総務省職員ではありません</div>
+      <div class="rc-brand">
+        <div class="rc-logo">🔄🛡️</div>
+        <div class="rc-word">たぶんCAPTCHA</div>
+        <div class="rc-links">全100枚からランダム出題</div>
       </div>
     </div>
   </div>
@@ -277,9 +277,10 @@ let current=null, selected=new Set(), revealed=false, rcLocked=false, tryCount=0
 function goPage2(){
   document.getElementById('page1').classList.remove('active');
   document.getElementById('page2').classList.add('active');
+  startRound();
 }
 
-/* ---- STEP1：ロボット認証 ---- */
+/* ---- ロボット認証チェック（画像認証下の演出） ---- */
 function onCheckboxClick(){
   if(rcLocked) return; rcLocked=true;
   const box=document.getElementById('rcBox');
@@ -288,16 +289,10 @@ function onCheckboxClick(){
     box.classList.remove('checking');
     box.classList.add('checked');
     box.innerHTML='✓';
-    document.getElementById('startDesc').textContent='ロボット認証 OK。続けて画像認証へ！';
-    setTimeout(()=>{
-      document.getElementById('challengeBox').style.display='block';
-      startRound();
-      document.getElementById('challengeBox').scrollIntoView({behavior:'smooth'});
-    },500);
   },1100);
 }
 
-/* ---- STEP2:出題（ランダムに1地域） ---- */
+/* ---- 出題（ランダムに1地域） ---- */
 function startRound(){
   tryCount++;
   const region = shuffle(Object.keys(REGIONS))[0];
