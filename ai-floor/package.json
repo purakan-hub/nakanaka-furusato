@@ -1,0 +1,14 @@
+{
+  "name": "purakan-ai-floor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ぷらかんのバーチャル AI オフィスを表示する単体 HTML",
+  "scripts": {
+    "build": "bash tools/build.sh",
+    "shot": "node tools/shot.js",
+    "closeup": "node tools/closeup.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.1"
+  }
+}
