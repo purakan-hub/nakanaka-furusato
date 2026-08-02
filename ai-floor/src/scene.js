@@ -87,7 +87,7 @@
     m.position.set(-FW / 2 + tn / 2 + i * tn, 0.1, -FD / 2 + tn / 2 + j * tn);
     m.receiveShadow = true; world.add(m);
   }
-  // subtle lighter walkway (no more castle carpet)
+  // subtle lighter walkway
   box(world, 7, 0.06, FD - 3, C.walk, 0, 0.21, 0, { rough: 1 });
   box(world, FW - 4, 0.06, 6.5, C.walk, 0, 0.21, 1, { rough: 1 });
 
